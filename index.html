@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#667eea">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NabungKu">
+<title>NabungKu - Smart Saving</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; }
+  html, body { height:100%; overflow:hidden; }
+  body { background:#f5f7fb; color:#333; overscroll-behavior:none; }
+  .app { height:100vh; height:100dvh; display:flex; flex-direction:column; max-width:600px; margin:0 auto; background:#f5f7fb; position:relative; }
+
+  .header { background:linear-gradient(135deg,#667eea,#764ba2); color:#fff; padding:calc(env(safe-area-inset-top) + 16px) 16px 16px; position:sticky; top:0; z-index:10; box-shadow:0 4px 12px rgba(0,0,0,0.1); }
+  .header-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .header h1 { font-size:18px; font-weight:700; display:flex; align-items:center; gap:6px; }
+  .header p { font-size:11px; opacity:0.85; }
+  .streak-badge { background:rgba(255,255,255,0.2); padding:6px 10px; border-radius:20px; font-size:12px; font-weight:600; }
+
+  .content { flex:1; overflow-y:auto; padding:14px 14px calc(90px + env(safe-area-inset-bottom)); -webkit-overflow-scrolling:touch; }
+  .panel { display:none; }
+  .panel.active { display:block; animation:fadeIn 0.25s; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
+
+  .card { background:#fff; border-radius:16px; padding:16px; margin-bottom:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
+  .card h3 { font-size:14px; color:#333; margin-bottom:12px; display:flex; align-items:center; gap:6px; }
+  .card label { font-size:12px; color:#666; display:block; margin-bottom:6px; margin-top:12px; font-weight:500; }
+  .card input, .card textarea { width:100%; padding:12px 14px; border:1.5px solid #e5e7eb; border-radius:12px; font-size:15px; font-family:inherit; outline:none; transition:0.2s; background:#fafbfc; -webkit-appearance:none; }
+  .card input:focus, .card textarea:focus { border-color:#667eea; background:#fff; box-shadow:0 0 0 3px rgba(102,126,234,0.1); }
+  .card textarea { resize:vertical; min-height:70px; }
+
+  .btn { width:100%; padding:14px; background:linear-gradient(135deg,#667eea,#764ba2); color:#fff; border:none; border-radius:12px; font-size:15px; font-weight:600; cursor:pointer; margin-top:14px; transition:0.15s; touch-action:manipulation; }
+  .btn:active { transform:scale(0.97); opacity:0.9; }
+  .btn-secondary { background:#eef0f5; color:#667eea; }
+  .btn-danger { background:linear-gradient(135deg,#e53935,#c62828); }
+  .btn-sm { padding:10px; font-size:13px; }
+
+  .result { background:linear-gradient(135deg,#e8f5e9,#f1f8e9); border-left:4px solid #4caf50; padding:14px; border-radius:12px; margin-top:12px; font-size:13px; line-height:1.7; }
+  .result strong { color:#2e7d32; }
+  .result .big { font-size:20px; font-weight:700; color:#1b5e20; display:block; margin:6px 0; }
+
+  .motivasi { background:linear-gradient(135deg,#fff3e0,#ffe0b2); border-radius:14px; padding:20px; text-align:center; border-left:4px solid #ff9800; position:relative; }
+  .motivasi .quote { font-style:italic; font-size:14px; color:#e65100; line-height:1.7; }
+  .motivasi .author { font-size:12px; color:#bf360c; margin-top:10px; font-weight:600; }
+  .motivasi .tag { position:absolute; top:-10px; right:12px; background:#ff9800; color:#fff; font-size:10px; padding:3px 10px; border-radius:10px; font-weight:700; }
+
+  .progress-wrap { background:#f0f0f5; border-radius:20px; height:26px; overflow:hidden; position:relative; margin:10px 0; }
+  .progress-bar { height:100%; background:linear-gradient(90deg,#4caf50,#8bc34a); border-radius:20px; transition:width 0.6s ease; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; color:#fff; font-size:11px; font-weight:700; min-width:36px; }
+
+  .goal-item { background:#fff; border-radius:14px; padding:14px; margin-bottom:10px; border-left:4px solid #667eea; box-shadow:0 2px 6px rgba(0,0,0,0.04); }
+  .goal-item h4 { font-size:14px; margin-bottom:6px; }
+  .goal-item .meta { font-size:11px; color:#888; display:flex; justify-content:space-between; margin-top:6px; gap:8px; }
+  .goal-actions { display:flex; gap:8px; margin-top:12px; }
+  .goal-actions .btn { margin:0; padding:10px; font-size:13px; }
+
+  .jurnal-item { background:#fff; padding:12px 14px; border-radius:12px; margin-bottom:8px; border-left:3px solid #667eea; font-size:12px; position:relative; padding-right:36px; }
+  .jurnal-item .date { font-weight:700; color:#667eea; margin-bottom:4px; font-size:11px; }
+  .jurnal-item .del { position:absolute; top:10px; right:10px; color:#e53935; cursor:pointer; font-weight:700; font-size:16px; padding:4px 8px; }
+
+  .ref-code { background:#f0f0f5; border:2px dashed #667eea; border-radius:14px; padding:16px; text-align:center; margin:12px 0; }
+  .ref-code .code { font-size:22px; font-weight:800; letter-spacing:2px; color:#667eea; margin:10px 0; word-break:break-all; }
+  .ref-stats { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:12px; }
+  .ref-stat { background:#fff; padding:10px 6px; border-radius:10px; text-align:center; }
+  .ref-stat .num { font-size:16px; font-weight:700; color:#667eea; }
+  .ref-stat .lbl { font-size:10px; color:#888; margin-top:4px; }
+
+  .reward-item { display:flex; align-items:center; gap:12px; padding:12px; background:#fafbfc; border-radius:12px; margin-bottom:8px; }
+  .reward-item .icon { font-size:26px; }
+  .reward-item .info { flex:1; min-width:0; }
+  .reward-item .info h4 { font-size:13px; }
+  .reward-item .info p { font-size:11px; color:#888; margin-top:2px; }
+  .reward-item .status { font-size:10px; padding:5px 8px; border-radius:20px; font-weight:700; white-space:nowrap; }
+  .status.locked { background:#ffebee; color:#c62828; }
+  .status.unlocked { background:#e8f5e9; color:#2e7d32; }
+
+  .stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .stat-box { background:#f0f0f5; padding:14px; border-radius:12px; text-align:center; }
+  .stat-box .lbl { font-size:11px; color:#888; }
+  .stat-box .val { font-size:16px; font-weight:700; color:#667eea; margin-top:4px; word-break:break-word; }
+
+  .bottom-nav { position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #e5e7eb; display:flex; padding:8px 0 calc(8px + env(safe-area-inset-bottom)); max-width:600px; margin:0 auto; z-index:100; box-shadow:0 -2px 12px rgba(0,0,0,0.06); }
+  .nav-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 4px; cursor:pointer; color:#999; transition:0.2s; }
+  .nav-item .icon { font-size:22px; transition:0.2s; }
+  .nav-item .label { font-size:10px; font-weight:600; }
+  .nav-item.active { color:#667eea; }
+  .nav-item.active .icon { transform:translateY(-2px) scale(1.1); }
+
+  .toast { position:fixed; bottom:100px; left:50%; transform:translateX(-50%) translateY(120px); background:#1f2937; color:#fff; padding:14px 22px; border-radius:30px; font-size:13px; transition:0.35s; z-index:9999; opacity:0; max-width:90%; text-align:center; box-shadow:0 8px 24px rgba(0,0,0,0.2); }
+  .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+
+  .empty { text-align:center; padding:30px 20px; color:#aaa; font-size:13px; }
+  .empty-icon { font-size:40px; margin-bottom:10px; opacity:0.5; }
+
+  .install-banner { display:none; background:linear-gradient(135deg,#667eea,#764ba2); color:#fff; padding:12px 14px; border-radius:12px; margin-bottom:12px; font-size:12px; align-items:center; gap:10px; }
+  .install-banner.show { display:flex; }
+  .install-banner button { background:#fff; color:#667eea; border:none; padding:8px 14px; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; margin-left:auto; white-space:nowrap; }
+
+  /* MODAL CUSTOM (pengganti prompt & confirm) */
+  .modal-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9998; display:none; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(4px); }
+  .modal-overlay.show { display:flex; animation:fadeIn 0.2s; }
+  .modal { background:#fff; border-radius:20px; padding:24px 20px; width:100%; max-width:400px; box-shadow:0 20px 60px rgba(0,0,0,0.3); animation:modalIn 0.25s; }
+  @keyframes modalIn { from{transform:scale(0.9);opacity:0;} to{transform:scale(1);opacity:1;} }
+  .modal h3 { font-size:17px; margin-bottom:8px; color:#1f2937; }
+  .modal p { font-size:13px; color:#666; margin-bottom:16px; line-height:1.5; }
+  .modal input { width:100%; padding:14px; border:2px solid #e5e7eb; border-radius:12px; font-size:18px; text-align:center; font-weight:600; outline:none; transition:0.2s; background:#fafbfc; -webkit-appearance:none; }
+  .modal input:focus { border-color:#667eea; background:#fff; box-shadow:0 0 0 3px rgba(102,126,234,0.1); }
+  .modal-btns { display:flex; gap:10px; margin-top:16px; }
+  .modal-btns button { flex:1; padding:14px; border:none; border-radius:12px; font-size:14px; font-weight:600; cursor:pointer; touch-action:manipulation; transition:0.15s; }
+  .modal-btns button:active { transform:scale(0.97); }
+  .modal-btns .cancel { background:#f0f0f5; color:#666; }
+  .modal-btns .confirm { background:linear-gradient(135deg,#667eea,#764ba2); color:#fff; }
+  .modal-btns .confirm.danger { background:linear-gradient(135deg,#e53935,#c62828); }
+
+  /* QUICK AMOUNT BUTTONS */
+  .quick-amounts { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px; }
+  .quick-amounts button { padding:10px; background:#eef0f5; color:#667eea; border:none; border-radius:10px; font-size:12px; font-weight:600; cursor:pointer; touch-action:manipulation; }
+  .quick-amounts button:active { background:#667eea; color:#fff; transform:scale(0.95); }
+
+  /* MOTIVASI ANIMASI */
+  .motivasi.new { animation:motivasiPop 0.5s; }
+  @keyframes motivasiPop { 0%{transform:scale(0.9);opacity:0;} 50%{transform:scale(1.02);} 100%{transform:scale(1);opacity:1;} }
+
+  .content::-webkit-scrollbar { width:4px; }
+  .content::-webkit-scrollbar-thumb { background:#ccc; border-radius:4px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <h1>💰 NabungKu</h1>
+        <p>Smart Saving Tools</p>
+      </div>
+      <div class="streak-badge">🔥 <span id="streak">0</span></div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="install-banner" id="installBanner">
+      <span>📲 Pasang NabungKu di HP kamu!</span>
+      <button onclick="installApp()">Pasang</button>
+    </div>
+
+    <!-- KALKULATOR -->
+    <div class="panel active" id="panel-kalkulator">
+      <div class="card">
+        <h3>🧮 Kalkulator Menabung</h3>
+        <label>Target Tabungan (Rp)</label>
+        <input type="number" id="kalk-target" placeholder="10000000" value="10000000" inputmode="numeric">
+        <label>Jangka Waktu (bulan)</label>
+        <input type="number" id="kalk-bulan" placeholder="12" value="12" inputmode="numeric">
+        <label>Bunga per Tahun (%) - isi 0 jika tanpa bunga</label>
+        <input type="number" id="kalk-bunga" placeholder="5" value="5" step="0.1" inputmode="decimal">
+        <button class="btn" onclick="hitungKalkulator()">Hitung Sekarang</button>
+        <div id="kalk-result"></div>
+      </div>
+      <div class="card">
+        <h3>💡 Tips Cepat</h3>
+        <div style="font-size:12px;color:#666;line-height:1.8;">
+          • Dana darurat: 6× pengeluaran bulanan<br>
+          • Rumus 50/30/20: 50% kebutuhan, 30% keinginan, 20% tabungan<br>
+          • Mulai dari 10% penghasilan, naikkan bertahap
+        </div>
+      </div>
+    </div>
+
+    <!-- TARGET -->
+    <div class="panel" id="panel-target">
+      <div class="card">
+        <h3>🎯 Buat Target Baru</h3>
+        <label>Nama Target</label>
+        <input type="text" id="t-nama" placeholder="Contoh: Dana Darurat">
+        <label>Jumlah Target (Rp)</label>
+        <input type="number" id="t-jumlah" placeholder="5000000" inputmode="numeric">
+        <label>Deadline</label>
+        <input type="date" id="t-deadline">
+        <button class="btn" onclick="tambahTarget()">+ Tambah Target</button>
+      </div>
+      <div class="card">
+        <h3>📊 Progress Target</h3>
+        <div id="list-target"></div>
+      </div>
+    </div>
+
+    <!-- JURNAL -->
+    <div class="panel" id="panel-jurnal">
+      <div class="card">
+        <h3>📓 Catat Tabungan Hari Ini</h3>
+        <label>Tanggal</label>
+        <input type="date" id="j-tanggal">
+        <label>Jumlah Ditabung (Rp)</label>
+        <input type="number" id="j-jumlah" placeholder="50000" inputmode="numeric">
+        <div class="quick-amounts">
+          <button onclick="setJumlah(10000)">Rp 10rb</button>
+          <button onclick="setJumlah(20000)">Rp 20rb</button>
+          <button onclick="setJumlah(50000)">Rp 50rb</button>
+          <button onclick="setJumlah(100000)">Rp 100rb</button>
+          <button onclick="setJumlah(200000)">Rp 200rb</button>
+          <button onclick="setJumlah(500000)">Rp 500rb</button>
+        </div>
+        <label>Catatan (opsional)</label>
+        <textarea id="j-catatan" placeholder="Hari ini skip kopi, hemat Rp 25rb..."></textarea>
+        <button class="btn" onclick="tambahJurnal()">💾 Simpan Jurnal</button>
+      </div>
+      <div class="card">
+        <h3>📖 Riwayat Jurnal</h3>
+        <div id="list-jurnal"></div>
+      </div>
+    </div>
+
+    <!-- MOTIVASI -->
+    <div class="panel" id="panel-motivasi">
+      <div class="card">
+        <h3>✨ Motivasi Hari Ini</h3>
+        <div class="motivasi" id="motivasi-box">
+          <div class="tag" id="motivasi-tag">HARIAN</div>
+          <div class="quote">Loading...</div>
+          <div class="author"></div>
+        </div>
+        <div style="font-size:11px;color:#888;text-align:center;margin-top:12px;font-style:italic;">
+          💡 Motivasi otomatis berubah setiap kali kamu mencatat jurnal
+        </div>
+      </div>
+      <div class="card">
+        <h3>📈 Statistik Menabungmu</h3>
+        <div id="statistik"></div>
+      </div>
+    </div>
+
+    <!-- REFERRAL -->
+    <div class="panel" id="panel-referral">
+      <div class="card">
+        <h3>🎁 Kode Referral Kamu</h3>
+        <div class="ref-code">
+          <div style="font-size:11px;color:#888;">Bagikan kode ini ke temanmu</div>
+          <div class="code" id="my-ref-code">NABUNG-XXXX</div>
+          <button class="btn btn-secondary btn-sm" onclick="shareRefCode()" style="margin-top:8px;">📤 Bagikan Kode</button>
+        </div>
+        <div class="ref-stats">
+          <div class="ref-stat"><div class="num" id="ref-count">0</div><div class="lbl">Diundang</div></div>
+          <div class="ref-stat"><div class="num" id="ref-points">0</div><div class="lbl">Poin</div></div>
+          <div class="ref-stat"><div class="num" id="ref-earn">0</div><div class="lbl">Bonus (Rp)</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>🎁 Reward Tersedia</h3>
+        <div id="list-reward"></div>
+      </div>
+      <div class="card">
+        <h3>🔑 Tukar Kode Referral Teman</h3>
+        <label>Masukkan kode referral teman</label>
+        <input type="text" id="input-ref" placeholder="NABUNG-XXXX" style="text-transform:uppercase;">
+        <button class="btn" onclick="tukarKode()">✅ Klaim Bonus Rp 10.000</button>
+      </div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <div class="nav-item active" data-tab="kalkulator"><div class="icon">🧮</div><div class="label">Hitung</div></div>
+    <div class="nav-item" data-tab="target"><div class="icon">🎯</div><div class="label">Target</div></div>
+    <div class="nav-item" data-tab="jurnal"><div class="icon">📓</div><div class="label">Jurnal</div></div>
+    <div class="nav-item" data-tab="motivasi"><div class="icon">✨</div><div class="label">Motivasi</div></div>
+    <div class="nav-item" data-tab="referral"><div class="icon">🎁</div><div class="label">Reward</div></div>
+  </nav>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modalBox"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DB = {
+  get(key) { try { return JSON.parse(localStorage.getItem('nabungku_'+key) || 'null'); } catch(e){ return null; } },
+  set(key, val) { localStorage.setItem('nabungku_'+key, JSON.stringify(val)); }
+};
+
+let user = DB.get('user');
+if (!user) {
+  const code = 'NABUNG-' + Math.random().toString(36).substring(2,6).toUpperCase();
+  user = { id:'u_'+Date.now(), refCode:code, refCount:0, refPoints:0, refEarn:0, streak:0, lastSave:null };
+  DB.set('user', user);
+}
+
+// ========== NAVIGATION ==========
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => switchTab(item.dataset.tab));
+});
+
+function switchTab(tabName) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.tab === tabName));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tabName).classList.add('active');
+  document.querySelector('.content').scrollTop = 0;
+  if (tabName === 'motivasi') { tampilkanMotivasi(); renderStatistik(); }
+  if (tabName === 'referral') renderReferral();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ========== MODAL SYSTEM (pengganti prompt & confirm) ==========
+function showInputModal({title, desc, placeholder, defaultValue, onConfirm, confirmText='Simpan'}) {
+  const overlay = document.getElementById('modalOverlay');
+  const box = document.getElementById('modalBox');
+  box.innerHTML = `
+    <h3>${title}</h3>
+    <p>${desc}</p>
+    <input type="number" id="modalInput" inputmode="numeric" placeholder="${placeholder||'0'}" value="${defaultValue||''}">
+    <div class="quick-amounts" id="modalQuick">
+      <button onclick="document.getElementById('modalInput').value='10000'">10rb</button>
+      <button onclick="document.getElementById('modalInput').value='20000'">20rb</button>
+      <button onclick="document.getElementById('modalInput').value='50000'">50rb</button>
+      <button onclick="document.getElementById('modalInput').value='100000'">100rb</button>
+      <button onclick="document.getElementById('modalInput').value='500000'">500rb</button>
+      <button onclick="document.getElementById('modalInput').value='1000000'">1jt</button>
+    </div>
+    <div class="modal-btns">
+      <button class="cancel" onclick="closeModal()">Batal</button>
+      <button class="confirm" id="modalConfirm">${confirmText}</button>
+    </div>
+  `;
+  overlay.classList.add('show');
+  setTimeout(() => document.getElementById('modalInput').focus(), 300);
+  
+  document.getElementById('modalConfirm').onclick = () => {
+    const val = document.getElementById('modalInput').value;
+    closeModal();
+    if (onConfirm) onConfirm(val);
+  };
+  
+  // Enter untuk submit
+  document.getElementById('modalInput').addEventListener('keypress', e => {
+    if (e.key === 'Enter') document.getElementById('modalConfirm').click();
+  });
+}
+
+function showConfirmModal({title, desc, onConfirm, confirmText='Ya, Hapus', danger=true}) {
+  const overlay = document.getElementById('modalOverlay');
+  const box = document.getElementById('modalBox');
+  box.innerHTML = `
+    <h3>${title}</h3>
+    <p>${desc}</p>
+    <input type="number" id="modalInput" inputmode="numeric" placeholder="${placeholder||'0'}" value="${defaultValue||''}">
+    <div class="quick-amounts" id="modalQuick">
+      <button onclick="document.getElementById('modalInput').value='10000'">10rb</button>
+      <button onclick="document.getElementById('modalInput').value='20000'">20rb</button>
+      <button onclick="document.getElementById('modalInput').value='50000'">50rb</button>
+      <button onclick="document.getElementById('modalInput').value='100000'">100rb</button>
+      <button onclick="document.getElementById('modalInput').value='500000'">500rb</button>
+      <button onclick="document.getElementById('modalInput').value='1000000'">1jt</button>
+    </div>
+    <div class="modal-btns">
+      <button class="cancel" onclick="closeModal()">Batal</button>
+      <button class="confirm" id="modalConfirm">${confirmText}</button>
+    </div>
+  `;
+  overlay.classList.add('show');
+  setTimeout(() => document.getElementById('modalInput').focus(), 300);
+  
+  document.getElementById('modalConfirm').onclick = () => {
+    const val = document.getElementById('modalInput').value;
+    closeModal();
+    if (onConfirm) onConfirm(val);
+  };
+  
+  // Enter untuk submit
+  document.getElementById('modalInput').addEventListener('keypress', e => {
+    if (e.key === 'Enter') document.getElementById('modalConfirm').click();
+  });
+}
+
+function showConfirmModal({title, desc, onConfirm, confirmText='Ya, Hapus', danger=true}) {
+  const overlay = document.getElementById('modalOverlay');
+  const box = document.getElementById('modalBox');
+  box.innerHTML = `
+    <h3>${title}</h3>
+    <p>${desc}</p>
+    <div class="modal-btns">
+      <button class="cancel" onclick="closeModal()">Batal</button>
+      <button class="confirm ${danger?'danger':''}" id="modalConfirm">${confirmText}</button>
+    </div>
+  `;
+  overlay.classList.add('show');
+  document.getElementById('modalConfirm').onclick = () => {
+    closeModal();
+    if (onConfirm) onConfirm();
+  };
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+}
+
+// Close modal saat tap overlay
+document.getElementById('modalOverlay').addEventListener('click', e => {
+  if (e.target.id === 'modalOverlay') closeModal();
+});
+
+// ========== KALKULATOR ==========
+function hitungKalkulator() {
+  const target = parseFloat(document.getElementById('kalk-target').value) || 0;
+  const bulan = parseInt(document.getElementById('kalk-bulan').value) || 1;
+  const bungaTahunan = parseFloat(document.getElementById('kalk-bunga').value) || 0;
+  if (target <= 0 || bulan <= 0) { showToast('❌ Isi target dan bulan'); return; }
+  const i = (bungaTahunan/100)/12;
+  const setoran = i === 0 ? target/bulan : target*i/(Math.pow(1+i,bulan)-1);
+  const harian = setoran/30, mingguan = setoran/4;
+  const totalSetor = setoran*bulan, totalBunga = target - totalSetor;
+  document.getElementById('kalk-result').innerHTML = `
+    <div class="result">
+      <div>Untuk mencapai <strong>Rp ${formatRupiah(target)}</strong> dalam <strong>${bulan} bulan</strong>:</div>
+      <span class="big">Rp ${formatRupiah(Math.ceil(setoran))}/bulan</span>
+      <div style="font-size:12px;margin-top:8px;">
+        📅 Per hari: <strong>Rp ${formatRupiah(Math.ceil(harian))}</strong><br>
+        📆 Per minggu: <strong>Rp ${formatRupiah(Math.ceil(mingguan))}</strong><br>
+        💰 Total setoran: Rp ${formatRupiah(Math.ceil(totalSetor))}<br>
+        📈 Bunga: <strong>Rp ${formatRupiah(Math.ceil(totalBunga))}</strong>
+      </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:1px dashed #a5d6a7;font-size:12px;font-style:italic;color:#2e7d32;">
+        💡 "Mulai dari nominal kecil, konsistensi lebih penting!"
+      </div>
+    </div>`;
+}
+
+function formatRupiah(n) { return Math.round(n).toLocaleString('id-ID'); }
+
+// ========== TARGET ==========
+let targets = DB.get('targets') || [];
+
+function tambahTarget() {
+  const nama = document.getElementById('t-nama').value.trim();
+  const jumlah = parseFloat(document.getElementById('t-jumlah').value);
+  const deadline = document.getElementById('t-deadline').value;
+  if (!nama || !jumlah) { showToast('❌ Isi nama & jumlah'); return; }
+  targets.push({ id:Date.now(), nama, jumlah, terkumpul:0, deadline });
+  DB.set('targets', targets);
+  document.getElementById('t-nama').value = '';
+  document.getElementById('t-jumlah').value = '';
+  renderTargets();
+  showToast('✅ Target ditambahkan!');
+  // Update motivasi karena ada target baru
+  if (typeof perbaruiMotivasi === 'function') perbaruiMotivasi();
+}
+
+function tambahDana(id) {
+  const t = targets.find(x => x.id === id);
+  if (!t) return;
+  const sisa = t.jumlah - t.terkumpul;
+  showInputModal({
+    title: '💰 Nabung untuk "'+t.nama+'"',
+    desc: 'Sisa: Rp '+formatRupiah(sisa),
+    placeholder: 'Masukkan nominal',
+    confirmText: '💾 Nabung',
+    onConfirm: (val) => {
+      const n = parseFloat(val);
+      if (isNaN(n) || n <= 0) { showToast('❌ Nominal tidak valid'); return; }
+      t.terkumpul += n;
+      DB.set('targets', targets);
+      renderTargets();
+      showToast('💰 Berhasil nabung Rp ' + formatRupiah(n));
+      // Cek apakah target tercapai
+      if (t.terkumpul >= t.jumlah) {
+        setTimeout(() => {
+          showCelebration('🎉 SELAMAT!', 'Target "'+t.nama+'" TERCAPAI!');
+        }, 500);
+      }
+      if (typeof perbaruiMotivasi === 'function') perbaruiMotivasi();
+    }
+  });
+}
+
+function hapusTarget(id) {
+  const t = targets.find(x => x.id === id);
+  showConfirmModal({
+    title: '⚠️ Hapus Target?',
+    desc: 'Target "'+t.nama+'" akan dihapus permanen.',
+    confirmText: 'Ya, Hapus',
+    onConfirm: () => {
+      targets = targets.filter(x => x.id !== id);
+      DB.set('targets', targets);
+      renderTargets();
+      showToast('🗑️ Target dihapus');
+    }
+  });
+}
+
+function renderTargets() {
+  const el = document.getElementById('list-target');
+  if (targets.length === 0) { el.innerHTML = '<div class="empty"><div class="empty-icon">🎯</div>Belum ada target.<br>Buat target pertamamu!</div>'; return; }
+  el.innerHTML = targets.map(t => {
+    const pct = Math.min(100, (t.terkumpul/t.jumlah)*100);
+    const sisa = t.jumlah - t.terkumpul;
+    let hariSisa = '';
+    if (t.deadline) {
+      const d = Math.ceil((new Date(t.deadline) - new Date())/(1000*60*60*24));
+      hariSisa = d > 0 ? `${d} hari lagi` : '⚠️ Deadline lewat';
+    }
+    return `
+      <div class="goal-item">
+        <h4>🎯 ${t.nama}</h4>
+        <div class="progress-wrap"><div class="progress-bar" style="width:${pct}%">${pct.toFixed(0)}%</div></div>
+        <div class="meta">
+          <span>Rp ${formatRupiah(t.terkumpul)} / Rp ${formatRupiah(t.jumlah)}</span>
+          <span>${hariSisa}</span>
+        </div>
+        <div class="goal-actions">
+          <button class="btn btn-secondary" onclick="tambahDana(${t.id})">+ Nabung</button>
+          <button class="btn btn-danger" onclick="hapusTarget(${t.id})">Hapus</button>
+        </div>
+        ${sisa > 0 ? `<div style="font-size:11px;color:#888;margin-top:8px;">Sisa: Rp ${formatRupiah(sisa)}</div>` : '<div style="font-size:11px;color:#2e7d32;margin-top:8px;font-weight:700;">🎉 TARGET TERCAPAI!</div>'}
+      </div>`;
+  }).join('');
+}
+
+// ========== JURNAL ==========
+let jurnal = DB.get('jurnal') || [];
+
+function setJumlah(n) {
+  document.getElementById('j-jumlah').value = n;
+}
+
+function tambahJurnal() {
+  const tanggal = document.getElementById('j-tanggal').value || new Date().toISOString().split('T')[0];
+  const jumlah = parseFloat(document.getElementById('j-jumlah').value);
+  const catatan = document.getElementById('j-catatan').value.trim();
+  if (!jumlah || jumlah <= 0) { showToast('❌ Isi jumlah tabungan'); return; }
+  jurnal.unshift({ id:Date.now(), tanggal, jumlah, catatan });
+  DB.set('jurnal', jurnal);
+  
+  // Update streak
+  const today = new Date().toDateString();
+  if (user.lastSave !== today) {
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    user.streak = (user.lastSave === yesterday) ? user.streak + 1 : 1;
+    user.lastSave = today;
+    DB.set('user', user);
+    document.getElementById('streak').textContent = user.streak;
+    if (user.streak > 0 && user.streak % 7 === 0) {
+      showToast(`🔥 Streak ${user.streak} hari! Bonus 50 poin!`);
+      user.refPoints += 50;
+      DB.set('user', user);
+    }
+  }
+  
+  document.getElementById('j-jumlah').value = '';
+  document.getElementById('j-catatan').value = '';
+  renderJurnal();
+  showToast('✅ Jurnal tersimpan!');
+  
+  // 🔥 AUTO UPDATE MOTIVASI SETELAH ISI JURNAL
+  perbaruiMotivasi(true);
+}
+
+function hapusJurnal(id) {
+  showConfirmModal({
+    title: '⚠️ Hapus Jurnal?',
+    desc: 'Catatan jurnal ini akan dihapus.',
+    confirmText: 'Ya, Hapus',
+    onConfirm: () => {
+      jurnal = jurnal.filter(x => x.id !== id);
+      DB.set('jurnal', jurnal);
+      renderJurnal();
+      showToast('🗑️ Jurnal dihapus');
+    }
+  });
+}
+
+function renderJurnal() {
+  const el = document.getElementById('list-jurnal');
+  if (jurnal.length === 0) { el.innerHTML = '<div class="empty"><div class="empty-icon">📓</div>Belum ada jurnal.<br>Mulai catat hari ini!</div>'; return; }
+  el.innerHTML = jurnal.slice(0, 50).map(j => `
+    <div class="jurnal-item">
+      <span class="del" onclick="hapusJurnal(${j.id})">✕</span>
+      <div class="date">📅 ${formatTanggal(j.tanggal)}</div>
+      <div style="font-size:14px;font-weight:600;color:#333;">💰 Rp ${formatRupiah(j.jumlah)}</div>
+      ${j.catatan ? `<div style="color:#666;margin-top:6px;font-style:italic;">"${j.catatan}"</div>` : ''}
+    </div>`).join('');
+}
+
+function formatTanggal(str) {
+  const d = new Date(str);
+  return d.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+}
+
+// ========== MOTIVASI OTOMATIS ==========
+const motivasiDatabase = {
+  // Saat user baru pertama kali / belum ada aktivitas
+  baru: [
+    { q: "Mulai dari Rp 10.000 hari ini, lebih baik dari rencana Rp 1 juta besok.", a: "NabungKu" },
+    { q: "Perjalanan 1000 mil dimulai dari satu langkah. Begitu juga tabunganmu.", a: "NabungKu" },
+    { q: "Kamu tidak perlu kaya untuk mulai menabung. Kamu perlu menabung untuk menjadi kaya.", a: "Anonim" }
+  ],
+  // Berdasarkan streak
+  streak1: [
+    { q: "Hari pertama menabung! Ini awal dari kebiasaan baik. Lanjutkan! 💪", a: "NabungKu" },
+    { q: "1 hari pertama adalah yang tersulit. Kamu sudah lewati!", a: "NabungKu" }
+  ],
+  streak3: [
+    { q: "3 hari berturut-turut! Kebiasaan mulai terbentuk. Jangan putus! 🔥", a: "NabungKu" },
+    { q: "3 hari konsisten. Otakmu mulai terbiasa dengan rutinitas nabung!", a: "NabungKu" }
+  ],
+  streak7: [
+    { q: "🔥 7 HARI STREAK! Kamu luar biasa! Kebiasaan sudah mulai terbentuk.", a: "NabungKu" },
+    { q: "1 minggu konsisten! Ini yang membedakan orang sukses dengan yang lain.", a: "NabungKu" }
+  ],
+  streak30: [
+    { q: "🏆 30 HARI! Kamu sudah punya HABIT menabung yang sesungguhnya!", a: "NabungKu" },
+    { q: "Sebulan penuh! Sekarang menabung sudah jadi bagian dari hidupmu.", a: "NabungKu" }
+  ],
+  streak100: [
+    { q: "👑 100 HARI! Kamu adalah legenda menabung! Terus pertahankan!", a: "NabungKu" },
+    { q: "100 hari konsisten. Ini bukan lagi kebiasaan — ini sudah karakter!", a: "NabungKu" }
+  ],
+  // Berdasarkan progress target
+  target25: [
+    { q: "25% target tercapai! Kamu di jalur yang tepat. Terus semangat! 🎯", a: "NabungKu" },
+    { q: "Seperempat jalan sudah dilalui. Sisanya pasti bisa!", a: "NabungKu" }
+  ],
+  target50: [
+    { q: "🎯 SETENGAH JALAN! Kamu luar biasa! Jangan berhenti di tengah.", a: "NabungKu" },
+    { q: "50% tercapai! Finish line semakin dekat. Gas terus!", a: "NabungKu" }
+  ],
+  target75: [
+    { q: "75% tercapai! Dikit lagi sampai! Jangan kendor sekarang! 💪", a: "NabungKu" },
+    { q: "3/4 jalan sudah kamu lalui. Bangga sama dirimu!", a: "NabungKu" }
+  ],
+  target100: [
+    { q: "🎉 SELAMAT! TARGET TERCAPAI! Saatnya bikin target baru yang lebih besar!", a: "NabungKu" },
+    { q: "🏆 Kamu BERHASIL! Ini bukti kalau kamu bisa disiplin. Bangga!", a: "NabungKu" }
+  ],
+  // Berdasarkan total tabungan
+  first10k: [
+    { q: "Rp 10.000 pertama! Ini benih yang akan tumbuh jadi pohon besar. 🌱", a: "NabungKu" },
+    { q: "Langkah pertama sudah dimulai. Setiap rupiah berarti!", a: "NabungKu" }
+  ],
+  first100k: [
+    { q: "Rp 100.000 terkumpul! Jangan remehkan nominal kecil, itu awal yang hebat.", a: "NabungKu" },
+    { q: "100rb! Angka ini akan terus bertambah kalau kamu konsisten.", a: "NabungKu" }
+  ],
+  first1m: [
+    { q: "🎊 Rp 1 JUTA! Kamu sudah buktikan bisa! Next target: 5 juta!", a: "NabungKu" },
+    { q: "Juta pertama adalah yang tersulit. Kamu sudah lewati! 💰", a: "NabungKu" }
+  ],
+  first10m: [
+    { q: "🏅 Rp 10 JUTA! Kamu sudah level berbeda. Teruskan!", a: "NabungKu" },
+    { q: "10 juta! Konsistensimu luar biasa. Jangan berhenti di sini.", a: "NabungKu" }
+  ],
+  // General
+  general: [
+    { q: "Orang kaya menabung dulu, baru belanja. Orang miskin belanja dulu, baru menabung sisa.", a: "Warren Buffett" },
+    { q: "Setiap rupiah yang kamu tabung hari ini adalah kebebasanmu di masa depan.", a: "Robert Kiyosaki" },
+    { q: "Disiplin menabung hari ini = ketenangan hidup esok hari.", a: "NabungKu" },
+    { q: "Kopi Rp 25rb × 30 hari = Rp 750rb. Itu bisa jadi dana darurat bulananmu.", a: "Latte Factor" },
+    { q: "Tabungan adalah tameng terbaik melawan ketidakpastian hidup.", a: "NabungKu" },
+    { q: "Setiap hari kamu menabung, kamu sedang membangun versi dirimu yang lebih kuat.", a: "NabungKu" }
+  ]
+};
+
+function getMotivasiOtomatis() {
+  const total = jurnal.reduce((s,j) => s+j.jumlah, 0);
+  const streak = user.streak;
+  
+  // Cek target yang sedang berjalan
+  let targetProgress = 0;
+  let adaTargetTercapai = false;
+  if (targets.length > 0) {
+    const t = targets[targets.length - 1]; // target terbaru
+    targetProgress = (t.terkumpul / t.jumlah) * 100;
+    if (targetProgress >= 100) adaTargetTercapai = true;
+  }
+  
+  // Prioritas tertinggi: target tercapai
+  if (adaTargetTercapai) return { pool: 'target100', tag: '🎉 TARGET!' };
+  
+  // Prioritas streak milestone
+  if (streak >= 100) return { pool: 'streak100', tag: '👑 100 HARI' };
+  if (streak >= 30) return { pool: 'streak30', tag: '🏆 30 HARI' };
+  if (streak >= 7) return { pool: 'streak7', tag: '🔥 7 HARI' };
+  if (streak >= 3) return { pool: 'streak3', tag: '🔥 ON FIRE' };
+  if (streak === 1) return { pool: 'streak1', tag: '💪 MULAI' };
+  
+  // Progress target
+  if (targetProgress >= 75) return { pool: 'target75', tag: '🎯 75%' };
+  if (targetProgress >= 50) return { pool: 'target50', tag: '🎯 50%' };
+  if (targetProgress >= 25) return { pool: 'target25', tag: '🎯 25%' };
+  
+  // Berdasarkan total
+  if (total >= 10000000) return { pool: 'first10m', tag: '🏅 10 JUTA' };
+  if (total >= 1000000) return { pool: 'first1m', tag: '💰 1 JUTA' };
+  if (total >= 100000) return { pool: 'first100k', tag: '💵 100RB' };
+  if (total >= 10000) return { pool: 'first10k', tag: '🌱 PEMULA' };
+  
+  // Baru / belum ada aktivitas
+  if (jurnal.length === 0) return { pool: 'baru', tag: 'MULAI' };
+  
+  return { pool: 'general', tag: 'HARIAN' };
+}
+
+function tampilkanMotivasi() {
+  const info = getMotivasiOtomatis();
+  const pool = motivasiDatabase[info.pool];
+  const m = pool[Math.floor(Math.random() * pool.length)];
+  const box = document.getElementById('motivasi-box');
+  box.classList.remove('new');
+  void box.offsetWidth; // trigger reflow
+  box.classList.add('new');
+  box.innerHTML = `
+    <div class="tag">${info.tag}</div>
+    <div class="quote">"${m.q}"</div>
+    <div class="author">— ${m.a}</div>
+  `;
+}
+
+function perbaruiMotivasi(showNotification) {
+  const info = getMotivasiOtomatis();
+  const pool = motivasiDatabase[info.pool];
+  const m = pool[Math.floor(Math.random() * pool.length)];
+  const box = document.getElementById('motivasi-box');
+  box.classList.remove('new');
+  void box.offsetWidth;
+  box.classList.add('new');
+  box.innerHTML = `
+    <div class="tag">${info.tag}</div>
+    <div class="quote">"${m.q}"</div>
+    <div class="author">— ${m.a}</div>
+  `;
+  
+  // Update juga di panel motivasi jika visible
+  if (showNotification) {
+    setTimeout(() => {
+      showToast('✨ Motivasi baru untukmu! Cek tab Motivasi');
+    }, 500);
+  }
+}
+
+// ========== CELEBRATION MODAL ==========
+function showCelebration(title, desc) {
+  const overlay = document.getElementById('modalOverlay');
+  const box = document.getElementById('modalBox');
+  box.innerHTML = `
+    <div style="text-align:center;">
+      <div style="font-size:60px;margin-bottom:16px;">🎉</div>
+      <h3 style="font-size:20px;color:#2e7d32;margin-bottom:12px;">${title}</h3>
+      <p style="font-size:14px;color:#333;line-height:1.6;">${desc}</p>
+      <p style="font-size:13px;color:#888;margin-top:12px;">Terus semangat menabung! 💪</p>
+      <div class="modal-btns" style="margin-top:20px;">
+        <button class="confirm" onclick="closeModal()" style="flex:1;">Mantap! 🚀</button>
+      </div>
+    </div>
+  `;
+  overlay.classList.add('show');
+}
+
+// ========== STATISTIK ==========
+function renderStatistik() {
+  const total = jurnal.reduce((s,j) => s+j.jumlah, 0);
+  const rata = jurnal.length > 0 ? total/jurnal.length : 0;
+  const today = new Date().toISOString().split('T')[0];
+  const todayTotal = jurnal.filter(j => j.tanggal === today).reduce((s,j) => s+j.jumlah, 0);
+  document.getElementById('statistik').innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-box"><div class="lbl">Total Ditabung</div><div class="val">Rp ${formatRupiah(total)}</div></div>
+      <div class="stat-box"><div class="lbl">Rata-rata</div><div class="val">Rp ${formatRupiah(rata)}</div></div>
+      <div class="stat-box"><div class="lbl">Hari Ini</div><div class="val">Rp ${formatRupiah(todayTotal)}</div></div>
+      <div class="stat-box"><div class="lbl">🔥 Streak</div><div class="val" style="color:#ff9800;">${user.streak} hari</div></div>
+    </div>`;
+}
+
+// ========== REFERRAL ==========
+const rewardList = [
+  { icon:'🎁', nama:'Voucher Rp 10.000', poin:100, ket:'Tukar e-wallet' },
+  { icon:'☕', nama:'Voucher Kopi', poin:200, ket:'Kopi Kenangan/Starbucks' },
+  { icon:'📚', nama:'E-Book Keuangan', poin:300, ket:'Panduan menabung' },
+  { icon:'💎', nama:'Premium 1 Bulan', poin:500, ket:'Unlock semua fitur' },
+  { icon:'🏆', nama:'Premium 1 Tahun', poin:2000, ket:'Hemat 60%!' }
+];
+
+function renderReferral() {
+  document.getElementById('my-ref-code').textContent = user.refCode;
+  document.getElementById('ref-count').textContent = user.refCount;
+  document.getElementById('ref-points').textContent = user.refPoints;
+  document.getElementById('ref-earn').textContent = formatRupiah(user.refEarn);
+  document.getElementById('list-reward').innerHTML = rewardList.map(r => {
+    const unlocked = user.refPoints >= r.poin;
+    return `
+      <div class="reward-item">
+        <div class="icon">${r.icon}</div>
+        <div class="info"><h4>${r.nama}</h4><p>${r.ket} • ${r.poin} poin</p></div>
+        <div class="status ${unlocked?'unlocked':'locked'}">${unlocked?'✅ Bisa':'🔒 '+(r.poin-user.refPoints)}</div>
+      </div>`;
+  }).join('');
+}
+
+function shareRefCode() {
+  const text = `💰 Yuk gabung NabungKu - aplikasi smart menabung!\n\nGunakan kode referral saya: ${user.refCode}\n\nKamu dapat bonus Rp 10.000 + 100 poin!\n\nCoba sekarang di: ${window.location.href}`;
+  if (navigator.share) {
+    navigator.share({ title:'NabungKu - Smart Saving', text:text }).catch(()=>{});
+  } else {
+    navigator.clipboard.writeText(text).then(() => showToast('📋 Link + kode sudah dicopy!'));
+  }
+}
+
+function tukarKode() {
+  const input = document.getElementById('input-ref').value.trim().toUpperCase();
+  if (!input) { showToast('❌ Masukkan kode referral'); return; }
+  if (input === user.refCode) { showToast('❌ Tidak bisa pakai kode sendiri'); return; }
+  if (!input.startsWith('NABUNG-')) { showToast('❌ Format: NABUNG-XXXX'); return; }
+  if (DB.get('used_ref_' + input)) { showToast('❌ Kode sudah dipakai'); return; }
+  DB.set('used_ref_' + input, true);
+  user.refPoints += 100;
+  user.refEarn += 10000;
+  DB.set('user', user);
+  document.getElementById('input-ref').value = '';
+  renderReferral();
+  showToast('🎉 Bonus Rp 10.000 diklaim!');
+}
+
+// ========== PWA ==========
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBanner').classList.add('show');
+});
+
+function installApp() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+  } else {
+    showToast('💡 Buka menu browser → "Add to Home Screen"');
+  }
+  document.getElementById('installBanner').classList.remove('show');
+}
+
+// ========== INIT ==========
+document.getElementById('streak').textContent = user.streak;
+document.getElementById('j-tanggal').value = new Date().toISOString().split('T')[0];
+document.getElementById('t-deadline').value = new Date(Date.now() + 365*86400000).toISOString().split('T')[0];
+tampilkanMotivasi();
+renderTargets();
+renderJurnal();
+
+if (window.matchMedia('(display-mode: standalone)').matches) {
+  document.getElementById('installBanner').style.display = 'none';
+}
+</script>
+</body>
+</html>
+```
